@@ -37,6 +37,8 @@ else()
     set(GTEST_INCLUDE_DIR "${googletest_SOURCE_DIR}/googletest/include")
 endif()
 
+add_executable(unreal_calculator src/calculator.cpp)
+
 add_executable(calculator_tests
         tests/main.cpp
         tests/test_pomidorki.cpp
