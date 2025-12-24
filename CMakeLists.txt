@@ -7,16 +7,31 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include_directories(src)
 
+set(GTEST_TARGET_MAIN "gtest_main")
+set(GTEST_TARGET "gtest")
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt")
     message(STATUS "Using local gtest")
     add_subdirectory(gtest)
 else()
-    message(STATUS "Building gtest from source")
-    add_library(gtest STATIC gtest/qtest-all.cc)
-    target_include_directories(gtest PUBLIC gtest)
+    message(STATUS "Downloading gtest with FetchContent")
 
-    add_library(gtest_main STATIC gtest/qtest-all.cc)
-    target_link_libraries(gtest_main PUBLIC gtest)
+    include(FetchContent)
+
+    FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG v1.14.0
+    )
+
+    if(WIN32)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    endif()
+
+    FetchContent_MakeAvailable(googletest)
+
+    set(GTEST_TARGET_MAIN "GTest::gtest_main")
+    set(GTEST_TARGET "GTest::gtest")
 endif()
 
 add_executable(calculator_tests
@@ -37,10 +52,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     )
 endif()
 
-if(TARGET gtest_main)
-    target_link_libraries(calculator_tests PRIVATE gtest_main)
+if(TARGET ${GTEST_TARGET_MAIN})
+    message(STATUS "Linking with ${GTEST_TARGET_MAIN}")
+    target_link_libraries(calculator_tests PRIVATE ${GTEST_TARGET_MAIN})
+elseif(TARGET ${GTEST_TARGET})
+    message(STATUS "Linking with ${GTEST_TARGET}")
+    target_link_libraries(calculator_tests PRIVATE ${GTEST_TARGET})
 else()
-    target_link_libraries(calculator_tests PRIVATE gtest)
+    message(FATAL_ERROR "gtest targets not found. Expected ${GTEST_TARGET_MAIN} or ${GTEST_TARGET}")
 endif()
 
 enable_testing()
