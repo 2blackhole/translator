@@ -9,10 +9,12 @@ include_directories(src)
 
 set(GTEST_TARGET_MAIN "gtest_main")
 set(GTEST_TARGET "gtest")
+set(GTEST_INCLUDE_DIR "")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt")
     message(STATUS "Using local gtest")
     add_subdirectory(gtest)
+    set(GTEST_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gtest/googletest/include")
 else()
     message(STATUS "Downloading gtest with FetchContent")
 
@@ -32,12 +34,24 @@ else()
 
     set(GTEST_TARGET_MAIN "GTest::gtest_main")
     set(GTEST_TARGET "GTest::gtest")
+    set(GTEST_INCLUDE_DIR "${googletest_SOURCE_DIR}/googletest/include")
 endif()
 
 add_executable(calculator_tests
         tests/main.cpp
         tests/test_pomidorki.cpp
 )
+
+if(GTEST_INCLUDE_DIR AND EXISTS "${GTEST_INCLUDE_DIR}")
+    message(STATUS "Adding gtest include directory: ${GTEST_INCLUDE_DIR}")
+    target_include_directories(calculator_tests PRIVATE "${GTEST_INCLUDE_DIR}")
+else()
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/include")
+        target_include_directories(calculator_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/include")
+    elseif(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/_deps/googletest-src/googletest/include")
+        target_include_directories(calculator_tests PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/googletest-src/googletest/include")
+    endif()
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(calculator_tests PRIVATE
